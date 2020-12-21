@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © MageWorx. All rights reserved.
+ * See LICENSE.txt for license details.
+ */
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <preference for="MageWorx\SeoRedirectsGraphQl\Model\DpRedirectDataProviderInterface" type="MageWorx\SeoRedirectsGraphQl\Model\DpRedirectDataProvider"/>
+    <preference for="MageWorx\SeoRedirectsGraphQl\Model\CustomRedirectDataProviderInterface" type="MageWorx\SeoRedirectsGraphQl\Model\CustomRedirectDataProvider"/>
+    <type name="Magento\UrlRewriteGraphQl\Model\Resolver\EntityUrl">
+        <plugin name="mageworx_seoredirectsgraphql_modify_entity_url_data" type="MageWorx\SeoRedirectsGraphQl\Plugin\ModifyEntityUrlDataPlugin"/>
+    </type>
+</config>

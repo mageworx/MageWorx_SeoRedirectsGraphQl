@@ -19,6 +19,7 @@ use MageWorx\SeoRedirects\Model\ResourceModel\Redirect\CustomRedirect\Collection
 use MageWorx\SeoRedirects\Model\ResourceModel\Redirect\CustomRedirect\CollectionFactory
     as CustomRedirectCollectionFactory;
 use MageWorx\SeoRedirectsGraphQl\Model\Source\CustomRedirectType as CustomRedirectTypeOptions;
+use Magento\Framework\GraphQl\Query\Uid;
 
 class CustomRedirectDataProvider implements CustomRedirectDataProviderInterface
 {
@@ -48,6 +49,11 @@ class CustomRedirectDataProvider implements CustomRedirectDataProviderInterface
     protected $redirectTypeRewriteFragmentSource;
 
     /**
+     * @var Uid
+     */
+    protected $idEncoder;
+
+    /**
      * CustomRedirectDataProvider constructor.
      *
      * @param CustomRedirectHelper $customRedirectHelper
@@ -55,19 +61,22 @@ class CustomRedirectDataProvider implements CustomRedirectDataProviderInterface
      * @param CustomRedirectTypeOptions $customRedirectTypeOptions
      * @param RedirectTypeRewriteFragmentSource $redirectTypeRewriteFragmentSource
      * @param UrlFinderInterface $urlFinder
+     * @param Uid $idEncoder
      */
     public function __construct(
         CustomRedirectHelper $customRedirectHelper,
         CustomRedirectCollectionFactory $customRedirectCollectionFactory,
         CustomRedirectTypeOptions $customRedirectTypeOptions,
         RedirectTypeRewriteFragmentSource $redirectTypeRewriteFragmentSource,
-        UrlFinderInterface $urlFinder
+        UrlFinderInterface $urlFinder,
+        Uid $idEncoder
     ) {
         $this->customRedirectHelper              = $customRedirectHelper;
         $this->customRedirectCollectionFactory   = $customRedirectCollectionFactory;
         $this->customRedirectTypeOptions         = $customRedirectTypeOptions;
         $this->redirectTypeRewriteFragmentSource = $redirectTypeRewriteFragmentSource;
         $this->urlFinder                         = $urlFinder;
+        $this->idEncoder                         = $idEncoder;
     }
 
     /**
@@ -121,9 +130,11 @@ class CustomRedirectDataProvider implements CustomRedirectDataProviderInterface
 
         return [
             'id'            => $urlRewrite->getEntityId(),
+            'entity_uid'    => $this->idEncoder->encode((string)$urlRewrite->getEntityId()),
             'canonical_url' => $urlRewrite->getRequestPath(),
             'relative_url'  => $urlRewrite->getRequestPath(),
             'redirectCode'  => (int)$customRedirect->getRedirectCode(),
+            'redirect_code' => (int)$customRedirect->getRedirectCode(),
             'type'          => $this->sanitizeType($urlRewrite->getEntityType())
         ];
     }
@@ -133,7 +144,7 @@ class CustomRedirectDataProvider implements CustomRedirectDataProviderInterface
      * @param int $storeId
      * @return UrlRewrite|null
      */
-    protected function getRewriteByTargetPath(string $targetPath, int $storeId)
+    protected function getRewriteByTargetPath(string $targetPath, int $storeId): ?UrlRewrite
     {
         return $this->urlFinder->findOneByData(
             [

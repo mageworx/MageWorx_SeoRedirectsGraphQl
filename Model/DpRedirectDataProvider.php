@@ -8,10 +8,13 @@ declare(strict_types=1);
 
 namespace MageWorx\SeoRedirectsGraphQl\Model;
 
+use Magento\Catalog\Api\Data\CategoryInterface as CategoryInterface;
 use Magento\Catalog\Model\ResourceModel\Category\Collection as CategoryCollection;
 use Magento\Catalog\Model\ResourceModel\Category\CollectionFactory as CategoryCollectionFactory;
 use Magento\CatalogUrlRewrite\Model\CategoryUrlRewriteGenerator;
 use Magento\Framework\DataObject;
+use Magento\Framework\GraphQl\Exception\GraphQlNoSuchEntityException;
+use Magento\Framework\GraphQl\Query\Uid;
 use Magento\UrlRewrite\Model\UrlFinderInterface;
 use Magento\UrlRewrite\Service\V1\Data\UrlRewrite;
 use Magento\UrlRewriteGraphQl\Model\Resolver\UrlRewrite\CustomUrlLocatorInterface;
@@ -47,6 +50,11 @@ class DpRedirectDataProvider implements DpRedirectDataProviderInterface
     protected $urlFinder;
 
     /**
+     * @var Uid
+     */
+    protected $idEncoder;
+
+    /**
      * DpRedirectDataProvider constructor.
      *
      * @param DpRedirectHelper $dpRedirectHelper
@@ -54,19 +62,22 @@ class DpRedirectDataProvider implements DpRedirectDataProviderInterface
      * @param CategoryCollectionFactory $categoryCollectionFactory
      * @param CustomUrlLocatorInterface $customUrlLocator
      * @param UrlFinderInterface $urlFinder
+     * @param Uid $idEncoder
      */
     public function __construct(
         DpRedirectHelper $dpRedirectHelper,
         DpRedirectCollectionFactory $dpRedirectCollectionFactory,
         CategoryCollectionFactory $categoryCollectionFactory,
         CustomUrlLocatorInterface $customUrlLocator,
-        UrlFinderInterface $urlFinder
+        UrlFinderInterface $urlFinder,
+        Uid $idEncoder
     ) {
         $this->dpRedirectHelper            = $dpRedirectHelper;
         $this->dpRedirectCollectionFactory = $dpRedirectCollectionFactory;
         $this->categoryCollectionFactory   = $categoryCollectionFactory;
         $this->customUrlLocator            = $customUrlLocator;
         $this->urlFinder                   = $urlFinder;
+        $this->idEncoder                   = $idEncoder;
     }
 
     /**
@@ -131,8 +142,10 @@ class DpRedirectDataProvider implements DpRedirectDataProviderInterface
 
         return [
             'id'            => $urlRewrite->getEntityId(),
+            'entity_uid'    => $this->idEncoder->encode((string)$urlRewrite->getEntityId()),
             'canonical_url' => $urlRewrite->getRequestPath(),
             'relative_url'  => $urlRewrite->getRequestPath(),
+            'redirect_code' => (int)$this->dpRedirectHelper->getRedirectType(),
             'redirectCode'  => (int)$this->dpRedirectHelper->getRedirectType(),
             'type'          => $this->sanitizeType($urlRewrite->getEntityType())
         ];
@@ -141,9 +154,10 @@ class DpRedirectDataProvider implements DpRedirectDataProviderInterface
     /**
      * @param CategoryCollection $collection
      * @param DpRedirect $redirect
-     * @return \Magento\Catalog\Model\Category|DataObject
+     * @return CategoryInterface|DataObject
+     * @throws GraphQlNoSuchEntityException
      */
-    protected function getCategoryModel(CategoryCollection $collection, DpRedirect $redirect)
+    protected function getCategoryModel(CategoryCollection $collection, DpRedirect $redirect): CategoryInterface
     {
         if ($collection->count() < 2) {
             return $collection->getFirstItem();
@@ -164,6 +178,8 @@ class DpRedirectDataProvider implements DpRedirectDataProviderInterface
                 }
             }
         }
+
+        throw new GraphQlNoSuchEntityException(__("Unable to locate Category Model"));
     }
 
     /**

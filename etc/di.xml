@@ -11,4 +11,7 @@
     <type name="Magento\UrlRewriteGraphQl\Model\Resolver\EntityUrl">
         <plugin name="mageworx_seoredirectsgraphql_modify_entity_url_data" type="MageWorx\SeoRedirectsGraphQl\Plugin\ModifyEntityUrlDataPlugin"/>
     </type>
+    <type name="Magento\UrlRewriteGraphQl\Model\Resolver\Route">
+        <plugin name="mageworx_seoredirectsgraphql_modify_route_data" type="MageWorx\SeoRedirectsGraphQl\Plugin\ModifyRouteDataPlugin"/>
+    </type>
 </config>

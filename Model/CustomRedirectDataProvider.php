@@ -8,8 +8,10 @@ declare(strict_types=1);
 
 namespace MageWorx\SeoRedirectsGraphQl\Model;
 
+use Magento\Framework\GraphQl\Schema\Type\ResolveInfo;
 use Magento\UrlRewrite\Model\UrlFinderInterface;
 use Magento\UrlRewrite\Service\V1\Data\UrlRewrite;
+use Magento\UrlRewriteGraphQl\Model\DataProvider\EntityDataProviderComposite;
 use MageWorx\SeoRedirects\Api\Data\CustomRedirectInterface;
 use MageWorx\SeoRedirects\Helper\CustomRedirect\Data as CustomRedirectHelper;
 use MageWorx\SeoRedirects\Model\Redirect\CustomRedirect;
@@ -54,14 +56,18 @@ class CustomRedirectDataProvider implements CustomRedirectDataProviderInterface
     protected $idEncoder;
 
     /**
-     * CustomRedirectDataProvider constructor.
-     *
+     * @var EntityDataProviderComposite
+     */
+    protected $entityDataProviderComposite;
+
+    /**
      * @param CustomRedirectHelper $customRedirectHelper
      * @param CustomRedirectCollectionFactory $customRedirectCollectionFactory
      * @param CustomRedirectTypeOptions $customRedirectTypeOptions
      * @param RedirectTypeRewriteFragmentSource $redirectTypeRewriteFragmentSource
      * @param UrlFinderInterface $urlFinder
      * @param Uid $idEncoder
+     * @param EntityDataProviderComposite $entityDataProviderComposite
      */
     public function __construct(
         CustomRedirectHelper $customRedirectHelper,
@@ -69,7 +75,8 @@ class CustomRedirectDataProvider implements CustomRedirectDataProviderInterface
         CustomRedirectTypeOptions $customRedirectTypeOptions,
         RedirectTypeRewriteFragmentSource $redirectTypeRewriteFragmentSource,
         UrlFinderInterface $urlFinder,
-        Uid $idEncoder
+        Uid $idEncoder,
+        EntityDataProviderComposite $entityDataProviderComposite
     ) {
         $this->customRedirectHelper              = $customRedirectHelper;
         $this->customRedirectCollectionFactory   = $customRedirectCollectionFactory;
@@ -77,6 +84,7 @@ class CustomRedirectDataProvider implements CustomRedirectDataProviderInterface
         $this->redirectTypeRewriteFragmentSource = $redirectTypeRewriteFragmentSource;
         $this->urlFinder                         = $urlFinder;
         $this->idEncoder                         = $idEncoder;
+        $this->entityDataProviderComposite       = $entityDataProviderComposite;
     }
 
     /**
@@ -91,6 +99,72 @@ class CustomRedirectDataProvider implements CustomRedirectDataProviderInterface
             return null;
         }
 
+        $customRedirect = $this->getCustomRedirect($storeId, $objectId, $objectType);
+
+        if (!$customRedirect || !$customRedirect->getId()) {
+            return null;
+        }
+
+        $urlRewrite = $this->getUrlRewrite($customRedirect);
+
+        if (!$urlRewrite) {
+            return null;
+        }
+
+        return [
+            'id'            => $urlRewrite->getEntityId(),
+            'entity_uid'    => $this->idEncoder->encode((string)$urlRewrite->getEntityId()),
+            'canonical_url' => $urlRewrite->getRequestPath(),
+            'relative_url'  => $urlRewrite->getRequestPath(),
+            'redirectCode'  => (int)$customRedirect->getRedirectCode(),
+            'redirect_code' => (int)$customRedirect->getRedirectCode(),
+            'type'          => $this->sanitizeType($urlRewrite->getEntityType())
+        ];
+    }
+
+    /**
+     * @param int $storeId
+     * @param int $objectId
+     * @param string $objectType
+     * @param ResolveInfo $info
+     * @return array|null
+     */
+    public function getRouteData(int $storeId, int $objectId, string $objectType, ResolveInfo $info): ?array
+    {
+        if (!$this->customRedirectHelper->isEnabled($storeId)) {
+            return null;
+        }
+
+        $customRedirect = $this->getCustomRedirect($storeId, $objectId, $objectType);
+
+        if (!$customRedirect || !$customRedirect->getId()) {
+            return null;
+        }
+
+        $urlRewrite = $this->getUrlRewrite($customRedirect);
+
+        if (!$urlRewrite) {
+            return null;
+        }
+
+        $type   = $this->sanitizeType($urlRewrite->getEntityType());
+        $result = $this->entityDataProviderComposite->getData($type, (int)$urlRewrite->getEntityId(), $info, $storeId);
+
+        $result['redirect_code'] = (int)$customRedirect->getRedirectCode();
+        $result['relative_url']  = $urlRewrite->getRequestPath();
+        $result['type']          = $type;
+
+        return $result;
+    }
+
+    /**
+     * @param int $storeId
+     * @param int $objectId
+     * @param string $objectType
+     * @return CustomRedirect|null
+     */
+    protected function getCustomRedirect(int $storeId, int $objectId, string $objectType): ?CustomRedirect
+    {
         $redirectTypes = $this->customRedirectTypeOptions->getTypes();
 
         if (empty($redirectTypes[$objectType])) {
@@ -107,36 +181,25 @@ class CustomRedirectDataProvider implements CustomRedirectDataProviderInterface
             ->addFieldToFilter(CustomRedirectInterface::STATUS, CustomRedirect::STATUS_ENABLED)
             ->addDateRangeFilter();
 
-        /** @var \MageWorx\SeoRedirects\Model\Redirect\CustomRedirect $customRedirect */
-        $customRedirect = $customRedirectCollection->getFirstItem();
+        return $customRedirectCollection->getFirstItem();
+    }
 
-        if (!$customRedirect->getId()) {
-            return null;
-        }
-
+    /**
+     * @param CustomRedirect $customRedirect
+     * @return UrlRewrite|null
+     */
+    protected function getUrlRewrite(CustomRedirect $customRedirect): ?UrlRewrite
+    {
         $redirectTypeRewriteFragmentSource = $this->redirectTypeRewriteFragmentSource->toArray();
 
         if (empty($redirectTypeRewriteFragmentSource[$customRedirect->getTargetEntityType()])) {
             return null;
         }
 
-        $targetPath = $redirectTypeRewriteFragmentSource[$customRedirect->getTargetEntityType(
-            )] . $customRedirect->getTargetEntityIdentifier();
-        $urlRewrite = $this->getRewriteByTargetPath($targetPath, (int)$customRedirect->getStoreId());
+        $targetPath = $redirectTypeRewriteFragmentSource[$customRedirect->getTargetEntityType()]
+            . $customRedirect->getTargetEntityIdentifier();
 
-        if (!$urlRewrite) {
-            return null;
-        }
-
-        return [
-            'id'            => $urlRewrite->getEntityId(),
-            'entity_uid'    => $this->idEncoder->encode((string)$urlRewrite->getEntityId()),
-            'canonical_url' => $urlRewrite->getRequestPath(),
-            'relative_url'  => $urlRewrite->getRequestPath(),
-            'redirectCode'  => (int)$customRedirect->getRedirectCode(),
-            'redirect_code' => (int)$customRedirect->getRedirectCode(),
-            'type'          => $this->sanitizeType($urlRewrite->getEntityType())
-        ];
+        return $this->getRewriteByTargetPath($targetPath, (int)$customRedirect->getStoreId());
     }
 
     /**

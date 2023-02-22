@@ -11,7 +11,7 @@ GraphQL API module for Mageworx [Magento 2 SEO Suite Ultimate](https://www.magew
 
 ## How to use
 
-**[SeoRedirectsGraphQl](https://github.com/mageworx/MageWorx_SeoRedirectsGraphQl)** module modifies the current values of the existing Output attributes for [urlResolver query](https://devdocs.magento.com/guides/v2.4/graphql/queries/url-resolver.html) if there is at least 1 Mageworx redirect for the 'requested URL' entity.
+**[SeoRedirectsGraphQl](https://github.com/mageworx/MageWorx_SeoRedirectsGraphQl)** module modifies the current values of the existing Output attributes for [urlResolver query](https://devdocs.magento.com/guides/v2.4/graphql/queries/url-resolver.html) and for [routes query](https://developer.adobe.com/commerce/webapi/graphql/schema/products/queries/route/) if there is at least 1 Mageworx redirect for the 'requested URL' entity.
 
 This module is compatible with:
 <ul>
@@ -19,7 +19,9 @@ This module is compatible with:
         <li>custom redirects with Request Entity Type and Target Entity Type equal to Product, Category or CMS Page</li>
 </ul>
 
-For example, urlResolver query has the following syntax:
+### urlResolver query
+
+For example, `urlResolver` query has the following syntax:
 
 ```
 {urlResolver(url: String!): EntityUrl}
@@ -47,6 +49,40 @@ For example, urlResolver query has the following syntax:
       "id": 2047,
       "relative_url": "erika-running-short.html",
       "redirectCode": 301,
+      "type": "PRODUCT"
+    }
+  }
+}
+```
+
+### routes query
+
+For example, `route` query has the following syntax:
+
+```
+{route(url: String!): RoutableInterface}
+```
+
+**Request:**
+
+```
+{
+  route(url: "savvy-shoulder-tote.html") {
+    relative_url
+    redirect_code
+    type
+  }
+}
+```
+
+**Response:**
+
+```
+{
+  "data": {
+    "route": {
+      "relative_url": "erika-running-short.html",
+      "redirect_code": 301,
       "type": "PRODUCT"
     }
   }

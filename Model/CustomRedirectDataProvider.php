@@ -105,6 +105,33 @@ class CustomRedirectDataProvider implements CustomRedirectDataProviderInterface
             return null;
         }
 
+        return $this->getUrlRewriteDataByCustomRedirectEntity($customRedirect);
+    }
+
+    /**
+     * Get entity URL data by the CustomRedirect entity.
+     *
+     * @param CustomRedirectInterface $customRedirect
+     * @return array|null
+     */
+    public function getEntityUrlDataByCustomRedirectEntity(CustomRedirectInterface $customRedirect): ?array
+    {
+        $storeId = $customRedirect->getStoreId();
+        if (!$this->customRedirectHelper->isEnabled($storeId)) {
+            return null;
+        }
+
+        return $this->getUrlRewriteDataByCustomRedirectEntity($customRedirect);
+    }
+
+    /**
+     * Get data for url rewrite by the CustomRedirect entity.
+     *
+     * @param CustomRedirectInterface $customRedirect
+     * @return array|null
+     */
+    public function getUrlRewriteDataByCustomRedirectEntity(CustomRedirectInterface $customRedirect): ?array
+    {
         $urlRewrite = $this->getUrlRewrite($customRedirect);
 
         if (!$urlRewrite) {

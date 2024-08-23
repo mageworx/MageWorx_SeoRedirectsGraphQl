@@ -67,7 +67,7 @@ class ModifyEntityUrlDataPlugin
 
         // Trying to locate custom redirect
         $customRedirect = $this->customRedirectFinder->getRedirectByPath($args['url'], [], $storeId);
-        if ($customRedirect->getId() === null) {
+        if ($customRedirect === null || $customRedirect->getId() === null) {
             return $result;
         }
 

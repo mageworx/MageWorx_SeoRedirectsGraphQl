@@ -135,9 +135,10 @@ class CustomRedirectDataProvider implements CustomRedirectDataProviderInterface
         $urlRewrite = $this->getUrlRewrite($customRedirect);
 
         if (!$urlRewrite) {
-            // Truing to get rewrite to custom url
+            // Trying to get rewrite to custom url by target path
             $urlRewrite = $this->getRewriteByTargetPath($customRedirect->getTargetEntityIdentifier(), (int)$customRedirect->getStoreId());
             if (!$urlRewrite) {
+                // Trying to get rewrite to custom url by request path
                 $urlRewrite = $this->getRewriteByRequestPath($customRedirect->getTargetEntityIdentifier(), (int)$customRedirect->getStoreId());
                 if (!$urlRewrite) {
                     return null;

@@ -65,7 +65,20 @@ class ModifyEntityUrlDataPlugin
             }
         }
 
-        // Trying to locate custom redirect
+        // Regular custom redirect
+        if (!empty($result['id']) && !empty($result['type'])) {
+            $newData = $this->customRedirectDataProvider->getEntityUrlData(
+                $storeId,
+                (int)$result['id'],
+                $result['type']
+            );
+
+            if (!empty($newData)) {
+                return $newData;
+            }
+        }
+
+        // Trying to locate custom redirect from custom redirect to custom redirect, so much custom
         $customRedirect = $this->customRedirectFinder->getRedirectByPath($args['url'], [], $storeId);
         if ($customRedirect === null || $customRedirect->getId() === null) {
             return $result;

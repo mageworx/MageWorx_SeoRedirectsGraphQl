@@ -135,7 +135,14 @@ class CustomRedirectDataProvider implements CustomRedirectDataProviderInterface
         $urlRewrite = $this->getUrlRewrite($customRedirect);
 
         if (!$urlRewrite) {
-            return null;
+            // Truing to get rewrite to custom url
+            $urlRewrite = $this->getRewriteByTargetPath($customRedirect->getTargetEntityIdentifier(), (int)$customRedirect->getStoreId());
+            if (!$urlRewrite) {
+                $urlRewrite = $this->getRewriteByRequestPath($customRedirect->getTargetEntityIdentifier(), (int)$customRedirect->getStoreId());
+                if (!$urlRewrite) {
+                    return null;
+                }
+            }
         }
 
         return [
@@ -219,6 +226,10 @@ class CustomRedirectDataProvider implements CustomRedirectDataProviderInterface
     {
         $redirectTypeRewriteFragmentSource = $this->redirectTypeRewriteFragmentSource->toArray();
 
+        if ($customRedirect->getTargetEntityType() === CustomRedirectInterface::REDIRECT_TYPE_CUSTOM) {
+            return $this->getRewriteByRequestPath($customRedirect->getRequestEntityIdentifier(), (int)$customRedirect->getStoreId());
+        }
+
         if (empty($redirectTypeRewriteFragmentSource[$customRedirect->getTargetEntityType()])) {
             return null;
         }
@@ -230,6 +241,8 @@ class CustomRedirectDataProvider implements CustomRedirectDataProviderInterface
     }
 
     /**
+     * Find URL rewrite entity by target path and store ID
+     *
      * @param string $targetPath
      * @param int $storeId
      * @return UrlRewrite|null
@@ -240,6 +253,19 @@ class CustomRedirectDataProvider implements CustomRedirectDataProviderInterface
             [
                 UrlRewrite::TARGET_PATH => trim($targetPath, '/'),
                 UrlRewrite::STORE_ID    => $storeId,
+            ]
+        );
+    }
+
+    /**
+     * Find URL rewrite entity by request path and store ID
+     */
+    protected function getRewriteByRequestPath(string $requestPath, int $storeId): ?UrlRewrite
+    {
+        return $this->urlFinder->findOneByData(
+            [
+                UrlRewrite::REQUEST_PATH => trim($requestPath, '/'),
+                UrlRewrite::STORE_ID     => $storeId,
             ]
         );
     }

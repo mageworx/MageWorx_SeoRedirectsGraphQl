@@ -1,0 +1,3 @@
+enum UrlRewriteEntityTypeEnum @doc(description: "This enumeration adds the CUSTOM entity type.") {
+    CUSTOM
+}

@@ -9,6 +9,7 @@ declare(strict_types=1);
 namespace MageWorx\SeoRedirectsGraphQl\Model;
 
 use Magento\Framework\GraphQl\Schema\Type\ResolveInfo;
+use MageWorx\SeoRedirects\Api\Data\CustomRedirectInterface;
 
 interface CustomRedirectDataProviderInterface
 {
@@ -28,4 +29,12 @@ interface CustomRedirectDataProviderInterface
      * @return array|null
      */
     public function getRouteData(int $storeId, int $objectId, string $objectType, ResolveInfo $info): ?array;
+
+    /**
+     * Get entity URL data by the CustomRedirect entity.
+     *
+     * @param CustomRedirectInterface $customRedirect
+     * @return array|null
+     */
+    public function getEntityUrlDataByCustomRedirectEntity(CustomRedirectInterface $customRedirect): ?array;
 }

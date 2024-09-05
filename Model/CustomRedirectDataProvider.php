@@ -128,7 +128,8 @@ class CustomRedirectDataProvider implements CustomRedirectDataProviderInterface
             'relative_url'  => $urlRewrite->getRequestPath(),
             'redirectCode'  => (int)$customRedirect->getRedirectCode(),
             'redirect_code' => (int)$customRedirect->getRedirectCode(),
-            'type'          => $this->sanitizeType($urlRewrite->getEntityType())
+            'type'          => $this->sanitizeType($urlRewrite->getEntityType()),
+            'type_id'       => $this->sanitizeType($urlRewrite->getEntityType()),
         ];
     }
 

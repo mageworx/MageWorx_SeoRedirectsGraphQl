@@ -1,3 +1,5 @@
 enum UrlRewriteEntityTypeEnum @doc(description: "This enumeration adds the CUSTOM entity type.") {
     CUSTOM
 }
+type CustomUrlRedirect implements RoutableInterface @doc(description: "Defines properties of a custom redirect entity. In Progress.") {
+}

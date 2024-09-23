@@ -4,7 +4,7 @@
  * See LICENSE.txt for license details.
  */
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace MageWorx\SeoRedirectsGraphQl\Model\Source;
 
@@ -15,6 +15,7 @@ class CustomRedirectType
     const TYPE_PRODUCT  = 'PRODUCT';
     const TYPE_CATEGORY = 'CATEGORY';
     const TYPE_CMS_PAGE = 'CMS_PAGE';
+    const TYPE_CUSTOM   = 'CUSTOM';
 
     /**
      * @return array
@@ -24,7 +25,8 @@ class CustomRedirectType
         return [
             self::TYPE_PRODUCT  => CustomRedirect::REDIRECT_TYPE_PRODUCT,
             self::TYPE_CATEGORY => CustomRedirect::REDIRECT_TYPE_CATEGORY,
-            self::TYPE_CMS_PAGE => CustomRedirect::REDIRECT_TYPE_PAGE
+            self::TYPE_CMS_PAGE => CustomRedirect::REDIRECT_TYPE_PAGE,
+            self::TYPE_CUSTOM   => CustomRedirect::REDIRECT_TYPE_CUSTOM
         ];
     }
 }

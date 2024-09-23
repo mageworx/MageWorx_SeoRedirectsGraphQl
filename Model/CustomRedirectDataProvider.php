@@ -8,10 +8,11 @@ declare(strict_types = 1);
 
 namespace MageWorx\SeoRedirectsGraphQl\Model;
 
+use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\GraphQl\Query\Uid;
 use Magento\Framework\GraphQl\Schema\Type\ResolveInfo;
 use Magento\UrlRewrite\Model\UrlFinderInterface;
-use Magento\UrlRewrite\Model\UrlRewriteFactory;
+use Magento\UrlRewrite\Service\V1\Data\UrlRewriteFactory;
 use Magento\UrlRewrite\Service\V1\Data\UrlRewrite;
 use Magento\UrlRewriteGraphQl\Model\DataProvider\EntityDataProviderComposite;
 use MageWorx\SeoRedirects\Api\Data\CustomRedirectInterface;
@@ -98,28 +99,7 @@ class CustomRedirectDataProvider implements CustomRedirectDataProviderInterface
      */
     public function getUrlRewriteDataByCustomRedirectEntity(CustomRedirectInterface $customRedirect): ?array
     {
-        $urlRewrite = $this->getUrlRewrite($customRedirect);
-
-        if (!$urlRewrite) {
-            // Trying to get rewrite to custom url by target path
-            $urlRewrite = $this->getRewriteByTargetPath($customRedirect->getTargetEntityIdentifier(), (int)$customRedirect->getStoreId());
-            if (!$urlRewrite) {
-                // Trying to get rewrite to custom url by request path
-                $urlRewrite = $this->getRewriteByRequestPath($customRedirect->getTargetEntityIdentifier(), (int)$customRedirect->getStoreId());
-                if (!$urlRewrite) {
-                    // Create new URL rewrite dummy entity to return the data about our custom redirect
-                    /** @var \Magento\UrlRewrite\Model\UrlRewrite $urlRewrite */
-                    $urlRewrite = $this->urlRewriteFactory->create();
-                    $urlRewrite->setEntityId(0);
-                    $urlRewrite->setRequestPath($customRedirect->getTargetEntityIdentifier());
-                    $urlRewrite->setEntityType('CUSTOM');
-                    $urlRewrite->setStoreId((int)$customRedirect->getStoreId());
-                    $urlRewrite->setMetadata(['redirect_code' => $customRedirect->getRedirectCode()]);
-                    $urlRewrite->setRedirectType($customRedirect->getRedirectCode());
-                    $urlRewrite->setTargetPath($customRedirect->getTargetEntityIdentifier());
-                }
-            }
-        }
+        $urlRewrite = $this->searchUrlRewriteByCustomRedirect($customRedirect);
 
         return [
             'id'            => $urlRewrite->getEntityId(),
@@ -152,11 +132,7 @@ class CustomRedirectDataProvider implements CustomRedirectDataProviderInterface
             return null;
         }
 
-        $urlRewrite = $this->getUrlRewrite($customRedirect);
-
-        if (!$urlRewrite) {
-            return null;
-        }
+        $urlRewrite = $this->searchUrlRewriteByCustomRedirect($customRedirect);
 
         $type   = $this->sanitizeType($urlRewrite->getEntityType());
         $result = $this->entityDataProviderComposite->getData($type, (int)$urlRewrite->getEntityId(), $info, $storeId);
@@ -197,7 +173,41 @@ class CustomRedirectDataProvider implements CustomRedirectDataProviderInterface
 
     /**
      * @param CustomRedirect $customRedirect
+     * @return UrlRewrite
+     * @throws \Magento\Framework\Exception\LocalizedException
+     */
+    protected function searchUrlRewriteByCustomRedirect(CustomRedirect $customRedirect): UrlRewrite
+    {
+        $urlRewrite = $this->getUrlRewrite($customRedirect);
+
+        if (!$urlRewrite) {
+            // Trying to get rewrite to custom url by target path
+            $urlRewrite = $this->getRewriteByTargetPath($customRedirect->getTargetEntityIdentifier(), (int)$customRedirect->getStoreId());
+            if (!$urlRewrite) {
+                // Trying to get rewrite to custom url by request path
+                $urlRewrite = $this->getRewriteByRequestPath($customRedirect->getTargetEntityIdentifier(), (int)$customRedirect->getStoreId());
+                if (!$urlRewrite) {
+                    // Create new URL rewrite dummy entity to return the data about our custom redirect
+                    /** @var \Magento\UrlRewrite\Model\UrlRewrite $urlRewrite */
+                    $urlRewrite = $this->urlRewriteFactory->create();
+                    $urlRewrite->setEntityId(0);
+                    $urlRewrite->setRequestPath($customRedirect->getTargetEntityIdentifier());
+                    $urlRewrite->setEntityType(CustomRedirectTypeOptions::TYPE_CUSTOM);
+                    $urlRewrite->setStoreId((int)$customRedirect->getStoreId());
+                    $urlRewrite->setMetadata(['redirect_code' => $customRedirect->getRedirectCode()]);
+                    $urlRewrite->setRedirectType($customRedirect->getRedirectCode());
+                    $urlRewrite->setTargetPath($customRedirect->getTargetEntityIdentifier());
+                }
+            }
+        }
+
+        return $urlRewrite;
+    }
+
+    /**
+     * @param CustomRedirect $customRedirect
      * @return UrlRewrite|null
+     * @throws LocalizedException
      */
     protected function getUrlRewrite(CustomRedirect $customRedirect): ?UrlRewrite
     {

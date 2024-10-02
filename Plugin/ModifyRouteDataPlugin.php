@@ -103,7 +103,7 @@ class ModifyRouteDataPlugin
                 $info,
                 $storeId
             );
-            $urlRewriteData += $entityData;
+            $urlRewriteData = $entityData + $urlRewriteData;;
         }
 
         return empty($urlRewriteData) ? null : $urlRewriteData;

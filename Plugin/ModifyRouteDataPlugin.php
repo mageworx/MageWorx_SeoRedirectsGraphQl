@@ -12,6 +12,7 @@ use Magento\Framework\GraphQl\Config\Element\Field;
 use Magento\Framework\GraphQl\Query\Resolver\ContextInterface;
 use Magento\Framework\GraphQl\Query\Resolver\Value;
 use Magento\Framework\GraphQl\Schema\Type\ResolveInfo;
+use Magento\UrlRewriteGraphQl\Model\DataProvider\EntityDataProviderComposite;
 use MageWorx\SeoRedirects\Model\Redirect\CustomRedirectFinder;
 use MageWorx\SeoRedirectsGraphQl\Model\CustomRedirectDataProviderInterface;
 use MageWorx\SeoRedirectsGraphQl\Model\DpRedirectDataProviderInterface;
@@ -21,15 +22,18 @@ class ModifyRouteDataPlugin
     protected DpRedirectDataProviderInterface     $dpRedirectDataProvider;
     protected CustomRedirectDataProviderInterface $customRedirectDataProvider;
     protected CustomRedirectFinder                $customRedirectFinder;
+    protected EntityDataProviderComposite         $entityDataProviderComposite;
 
     public function __construct(
         DpRedirectDataProviderInterface     $dpRedirectDataProvider,
         CustomRedirectDataProviderInterface $customRedirectDataProvider,
-        CustomRedirectFinder                $customRedirectFinder
+        CustomRedirectFinder                $customRedirectFinder,
+        EntityDataProviderComposite         $entityDataProviderComposite
     ) {
         $this->dpRedirectDataProvider     = $dpRedirectDataProvider;
         $this->customRedirectDataProvider = $customRedirectDataProvider;
         $this->customRedirectFinder       = $customRedirectFinder;
+        $this->entityDataProviderComposite      = $entityDataProviderComposite;
     }
 
     /**
@@ -92,6 +96,15 @@ class ModifyRouteDataPlugin
         }
 
         $urlRewriteData = $this->customRedirectDataProvider->getEntityUrlDataByCustomRedirectEntity($customRedirect);
+        if (is_array($urlRewriteData) && !empty($urlRewriteData['type']) && !empty($urlRewriteData['id'])) {
+            $entityData = $this->entityDataProviderComposite->getData(
+                $urlRewriteData['type'],
+                (int)$urlRewriteData['id'],
+                $info,
+                $storeId
+            );
+            $urlRewriteData = $entityData + $urlRewriteData;;
+        }
 
         return empty($urlRewriteData) ? null : $urlRewriteData;
     }

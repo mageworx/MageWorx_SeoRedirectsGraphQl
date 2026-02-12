@@ -48,8 +48,8 @@ class ModifyEntityUrlDataPlugin
         Field $field,
         $context,
         ResolveInfo $info,
-        array $value = null,
-        array $args = null
+        ?array $value = null,
+        ?array $args = null
     ) {
         $storeId = (int)$context->getExtensionAttributes()->getStore()->getId();
 
